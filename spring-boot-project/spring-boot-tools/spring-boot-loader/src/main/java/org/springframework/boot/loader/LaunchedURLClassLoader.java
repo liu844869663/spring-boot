@@ -73,11 +73,16 @@ public class LaunchedURLClassLoader extends URLClassLoader {
 		}
 	}
 
+	/**
+	 * 重写类加载器中加载 Class 类对象方法
+	 */
 	@Override
 	protected Class<?> loadClass(String name, boolean resolve) throws ClassNotFoundException {
 		Handler.setUseFastConnectionExceptions(true);
 		try {
 			try {
+				// 判断这个类是否有对应的 Package 包
+				// 没有的话会从所有 URL（包括内部引入的所有 jar 包）中找到对应的 Package 包并进行设置
 				definePackageIfNecessary(name);
 			}
 			catch (IllegalArgumentException ex) {
@@ -89,6 +94,7 @@ public class LaunchedURLClassLoader extends URLClassLoader {
 					throw new AssertionError("Package " + name + " has already been defined but it could not be found");
 				}
 			}
+			// 加载对应的 Class 类对象
 			return super.loadClass(name, resolve);
 		}
 		finally {
@@ -105,9 +111,12 @@ public class LaunchedURLClassLoader extends URLClassLoader {
 	private void definePackageIfNecessary(String className) {
 		int lastDot = className.lastIndexOf('.');
 		if (lastDot >= 0) {
+			// 获取包名
 			String packageName = className.substring(0, lastDot);
+			// 没找到对应的 Package 包则进行解析
 			if (getPackage(packageName) == null) {
 				try {
+					// 遍历所有的 URL，从所有的 jar 包中找到这个类对应的 Package 包并进行设置
 					definePackage(className, packageName);
 				}
 				catch (IllegalArgumentException ex) {
@@ -127,15 +136,19 @@ public class LaunchedURLClassLoader extends URLClassLoader {
 	private void definePackage(String className, String packageName) {
 		try {
 			AccessController.doPrivileged((PrivilegedExceptionAction<Object>) () -> {
+				// 把类路径解析成类名并加上 .class 后缀
 				String packageEntryName = packageName.replace('.', '/') + "/";
 				String classEntryName = className.replace('.', '/') + ".class";
+				// 遍历所有的 URL（包括应用内部引入的所有 jar 包）
 				for (URL url : getURLs()) {
 					try {
 						URLConnection connection = url.openConnection();
 						if (connection instanceof JarURLConnection) {
 							JarFile jarFile = ((JarURLConnection) connection).getJarFile();
+							// 如果这个 jar 中存在这个类名，且有对应的 Manifest
 							if (jarFile.getEntry(classEntryName) != null && jarFile.getEntry(packageEntryName) != null
 									&& jarFile.getManifest() != null) {
+								// 定义这个类对应的 Package 包
 								definePackage(packageName, jarFile.getManifest(), url);
 								return null;
 							}

@@ -36,6 +36,7 @@ public abstract class ExecutableArchiveLauncher extends Launcher {
 
 	public ExecutableArchiveLauncher() {
 		try {
+			// 为当前应用创建一个 Archive 对象，可用于解析 jar 包（当前应用）中所有的信息
 			this.archive = createArchive();
 		}
 		catch (Exception ex) {
@@ -53,21 +54,29 @@ public abstract class ExecutableArchiveLauncher extends Launcher {
 
 	@Override
 	protected String getMainClass() throws Exception {
+		// 获取 jar 包（当前应用）的 Manifest 对象，也就是 META-INF/MANIFEST.MF 文件中的属性
 		Manifest manifest = this.archive.getManifest();
 		String mainClass = null;
 		if (manifest != null) {
+			// 获取启动类（当前应用自己的启动类）
 			mainClass = manifest.getMainAttributes().getValue("Start-Class");
 		}
 		if (mainClass == null) {
 			throw new IllegalStateException("No 'Start-Class' manifest entry specified in " + this);
 		}
+		// 返回当前应用的启动类
 		return mainClass;
 	}
 
 	@Override
 	protected List<Archive> getClassPathArchives() throws Exception {
+		// <1> 创建一个 Archive.EntryFilter 类，用于判断 Archive.Entry 是否匹配，过滤 jar 包（当前应用）以外的东西
+		// <2> 从 `archive`（当前 jar 包）解析出所有 Archive 条目信息
 		List<Archive> archives = new ArrayList<>(this.archive.getNestedArchives(this::isNestedArchive));
 		postProcessClassPathArchives(archives);
+		// <3> 返回找到的所有 JarFileArchive
+		// `BOOT-INF/classes/` 目录对应一个 JarFileArchive（因为就是当前应用中的内容）
+		// `BOOT-INF/lib/` 目录下的每个 jar 包对应一个 JarFileArchive
 		return archives;
 	}
 

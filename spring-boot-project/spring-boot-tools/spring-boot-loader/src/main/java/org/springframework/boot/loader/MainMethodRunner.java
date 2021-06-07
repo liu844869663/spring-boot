@@ -43,8 +43,11 @@ public class MainMethodRunner {
 	}
 
 	public void run() throws Exception {
+		// 根据名称加载 main 方法所在类的 Class 对象
 		Class<?> mainClass = Thread.currentThread().getContextClassLoader().loadClass(this.mainClassName);
+		// 获取 main 方法
 		Method mainMethod = mainClass.getDeclaredMethod("main", String[].class);
+		// 执行这个 main 方法（反射）
 		mainMethod.invoke(null, new Object[] { this.args });
 	}
 

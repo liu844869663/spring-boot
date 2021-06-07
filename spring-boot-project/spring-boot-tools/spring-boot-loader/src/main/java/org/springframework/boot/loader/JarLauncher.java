@@ -42,13 +42,24 @@ public class JarLauncher extends ExecutableArchiveLauncher {
 
 	@Override
 	protected boolean isNestedArchive(Archive.Entry entry) {
+		// 只接受 `BOOT-INF/classes/` 目录
 		if (entry.isDirectory()) {
 			return entry.getName().equals(BOOT_INF_CLASSES);
 		}
+		// 只接受 `BOOT-INF/lib/` 目录下的 jar 包
 		return entry.getName().startsWith(BOOT_INF_LIB);
 	}
 
+	/**
+	 * 这里是 java -jar 启动 SpringBoot 打包后的 jar 包的入口
+	 * 可查看 jar 包中的 META-INF/MANIFEST.MF 文件（该文件用于对 Java 应用进行配置）
+	 * 参考 Oracle 官方对于 jar 的说明（https://docs.oracle.com/javase/8/docs/technotes/guides/jar/jar.html）
+	 * 该文件其中会有一个配置项：Main-Class: org.springframework.boot.loader.JarLauncher
+	 * 这个配置表示会调用 JarLauncher#main(String[]) 方法，也就当前方法
+	 */
 	public static void main(String[] args) throws Exception {
+		// <1> 创建当前类的实例对象，会创建一个 Archive 对象（当前应用），可用于解析 jar 包（当前应用）中所有的信息
+		// <2> 调用其 launch(String[]) 方法
 		new JarLauncher().launch(args);
 	}
 

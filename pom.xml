@@ -12,6 +12,8 @@
 	<properties>
 		<revision>2.2.14.BUILD-SNAPSHOT</revision>
 		<main.basedir>${basedir}</main.basedir>
+		<!-- 禁用 Maven 代码检查 -->
+		<disable.checks>true</disable.checks>
 	</properties>
 	<!-- Most elements are in profiles so they are stripped out during maven-flatten -->
 	<profiles>
@@ -179,7 +181,8 @@
 		<repository>
 			<id>rabbit-milestone</id>
 			<name>Rabbit Milestone</name>
-			<url>https://dl.bintray.com/rabbitmq/maven-milestones</url>
+			<!-- https://dl.bintray.com/rabbitmq/maven-milestones -->
+			<url>https://repos.spark-packages.org</url>
 			<snapshots>
 				<enabled>false</enabled>
 			</snapshots>

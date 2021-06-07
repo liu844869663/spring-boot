@@ -379,9 +379,14 @@ public class JarFile extends AbstractJarFile {
 	 * {@link URLStreamHandler} will be located to deal with jar URLs.
 	 */
 	public static void registerUrlProtocolHandler() {
+		// <1> 获取系统变量中的 `java.protocol.handler.pkgs` 配置的 URLStreamHandler 路径
 		String handlers = System.getProperty(PROTOCOL_HANDLER, "");
+		// <2> 将 Spring Boot 自定义的 URL 协议处理器路径（`org.springframework.boot.loader`）添加至系统变量中
+		// JVM 启动时会获取 `java.protocol.handler.pkgs` 属性，多个用 `|` 分隔，以他们作为包名前缀，然后使用 `包名前缀.协议名.Handler` 作为该协议的实现
+		// 那么这里就会将 `org.springframework.boot.loader.jar.Handler` 作为 jar 包协议的实现
 		System.setProperty(PROTOCOL_HANDLER,
 				("".equals(handlers) ? HANDLERS_PACKAGE : handlers + "|" + HANDLERS_PACKAGE));
+		// <3> 重置已缓存的 URLStreamHandler 处理器们，避免重复创建
 		resetCachedUrlHandlers();
 	}
 

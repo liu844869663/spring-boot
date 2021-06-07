@@ -82,11 +82,17 @@ public class JarFileArchive implements Archive {
 	@Override
 	public List<Archive> getNestedArchives(EntryFilter filter) throws IOException {
 		List<Archive> nestedArchives = new ArrayList<>();
+		// 遍历 jar 包（当前应用）中所有的 Entry
 		for (Entry entry : this) {
+			// 进行过滤，`BOOT-INF/classes/` 目录或者 `BOOT-INF/lib/` 目录下的 jar 包
 			if (filter.matches(entry)) {
+				// 将 Entry 转换成 JarFileArchive
 				nestedArchives.add(getNestedArchive(entry));
 			}
 		}
+		// 返回 jar 包（当前应用）找到的所有 JarFileArchive
+		// `BOOT-INF/classes/` 目录对应一个 JarFileArchive（因为就是当前应用中的内容）
+		// `BOOT-INF/lib/` 目录下的每个 jar 包对应一个 JarFileArchive
 		return Collections.unmodifiableList(nestedArchives);
 	}
 
