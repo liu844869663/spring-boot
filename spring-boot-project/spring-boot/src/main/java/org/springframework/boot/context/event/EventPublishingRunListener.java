@@ -45,16 +45,27 @@ import org.springframework.util.ErrorHandler;
  */
 public class EventPublishingRunListener implements SpringApplicationRunListener, Ordered {
 
+	/**
+	 * Spring Boot 应用的启动类
+	 */
 	private final SpringApplication application;
 
+	/**
+	 * 启动类 `main(String[])` 方法的入参
+	 */
 	private final String[] args;
 
+	/**
+	 * 事件广播器，包含了所有的 `META-INF/spring.factories` 文件中配置的 {@link ApplicationListener} 监听器
+	 */
 	private final SimpleApplicationEventMulticaster initialMulticaster;
 
 	public EventPublishingRunListener(SpringApplication application, String[] args) {
 		this.application = application;
 		this.args = args;
 		this.initialMulticaster = new SimpleApplicationEventMulticaster();
+		// 在实例化 SpringApplication 的过程中会从 `META-INF/spring.factories` 文件中获取 ApplicationListener 类型的类名称，并进行实例化
+		// 这里会将他们添加至广播器中
 		for (ApplicationListener<?> listener : application.getListeners()) {
 			this.initialMulticaster.addApplicationListener(listener);
 		}
@@ -67,39 +78,46 @@ public class EventPublishingRunListener implements SpringApplicationRunListener,
 
 	@Override
 	public void starting() {
+		// 广播 Spring Boot 应用正在启动事件
 		this.initialMulticaster.multicastEvent(new ApplicationStartingEvent(this.application, this.args));
 	}
 
 	@Override
 	public void environmentPrepared(ConfigurableEnvironment environment) {
+		// 广播 Spring Boot 应用的 Environment 环境已准备事件
 		this.initialMulticaster
 				.multicastEvent(new ApplicationEnvironmentPreparedEvent(this.application, this.args, environment));
 	}
 
 	@Override
 	public void contextPrepared(ConfigurableApplicationContext context) {
+		// 广播 Spring Boot 应用的 Spring 上下文已初始化事件
 		this.initialMulticaster
 				.multicastEvent(new ApplicationContextInitializedEvent(this.application, this.args, context));
 	}
 
 	@Override
 	public void contextLoaded(ConfigurableApplicationContext context) {
+		// 将所有的 ApplicationListener 添加至 Spring 应用上下文
 		for (ApplicationListener<?> listener : this.application.getListeners()) {
 			if (listener instanceof ApplicationContextAware) {
 				((ApplicationContextAware) listener).setApplicationContext(context);
 			}
 			context.addApplicationListener(listener);
 		}
+		// 广播 Spring Boot 应用的 Spring 上下文已准备事件
 		this.initialMulticaster.multicastEvent(new ApplicationPreparedEvent(this.application, this.args, context));
 	}
 
 	@Override
 	public void started(ConfigurableApplicationContext context) {
+		// 广播 Spring Boot 应用的 Spring 上下文已启动事件
 		context.publishEvent(new ApplicationStartedEvent(this.application, this.args, context));
 	}
 
 	@Override
 	public void running(ConfigurableApplicationContext context) {
+		// 广播 Spring Boot 应用的 Spring 上下文准备就绪事件
 		context.publishEvent(new ApplicationReadyEvent(this.application, this.args, context));
 	}
 

@@ -72,6 +72,7 @@ public class ServletContextApplicationContextInitializer
 
 	@Override
 	public void initialize(ConfigurableWebApplicationContext applicationContext) {
+		// 将这个 ServletContext 上下文对象设置到 ApplicationContext 中
 		applicationContext.setServletContext(this.servletContext);
 		if (this.addApplicationContextAttribute) {
 			this.servletContext.setAttribute(WebApplicationContext.ROOT_WEB_APPLICATION_CONTEXT_ATTRIBUTE,

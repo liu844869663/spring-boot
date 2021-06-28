@@ -48,14 +48,20 @@ import org.springframework.data.repository.Repository;
 @Target(ElementType.TYPE)
 @Retention(RetentionPolicy.RUNTIME)
 @Documented
-@Inherited
-@SpringBootConfiguration
-@EnableAutoConfiguration
-@ComponentScan(excludeFilters = { @Filter(type = FilterType.CUSTOM, classes = TypeExcludeFilter.class),
-		@Filter(type = FilterType.CUSTOM, classes = AutoConfigurationExcludeFilter.class) })
+@Inherited // 表明该注解定义在某个类上时，其子类会继承该注解
+@SpringBootConfiguration // 继承 `@Configuration` 注解
+@EnableAutoConfiguration // 开启自动配置功能
+// 扫描指定路径下的 Bean
+@ComponentScan( excludeFilters = {
+				// 默认没有 TypeExcludeFilter
+				@Filter(type = FilterType.CUSTOM, classes = TypeExcludeFilter.class),
+				// 排除掉自动配置类
+				@Filter(type = FilterType.CUSTOM, classes = AutoConfigurationExcludeFilter.class) })
 public @interface SpringBootApplication {
 
 	/**
+	 * 需要自动配置的 Class 类
+	 *
 	 * Exclude specific auto-configuration classes such that they will never be applied.
 	 * @return the classes to exclude
 	 */
@@ -63,6 +69,8 @@ public @interface SpringBootApplication {
 	Class<?>[] exclude() default {};
 
 	/**
+	 * 需要自动配置的类名称
+	 *
 	 * Exclude specific auto-configuration class names such that they will never be
 	 * applied.
 	 * @return the class names to exclude
@@ -72,6 +80,8 @@ public @interface SpringBootApplication {
 	String[] excludeName() default {};
 
 	/**
+	 * 需要扫描的路径
+	 *
 	 * Base packages to scan for annotated components. Use {@link #scanBasePackageClasses}
 	 * for a type-safe alternative to String-based package names.
 	 * <p>
@@ -87,6 +97,8 @@ public @interface SpringBootApplication {
 	String[] scanBasePackages() default {};
 
 	/**
+	 * 需要扫描的 Class 类
+	 *
 	 * Type-safe alternative to {@link #scanBasePackages} for specifying the packages to
 	 * scan for annotated components. The package of each class specified will be scanned.
 	 * <p>
@@ -105,6 +117,7 @@ public @interface SpringBootApplication {
 	Class<?>[] scanBasePackageClasses() default {};
 
 	/**
+	 * 被标记的 Bean 是否进行 CGLIB 提升
 	 * Specify whether {@link Bean @Bean} methods should get proxied in order to enforce
 	 * bean lifecycle behavior, e.g. to return shared singleton bean instances even in
 	 * case of direct {@code @Bean} method calls in user code. This feature requires

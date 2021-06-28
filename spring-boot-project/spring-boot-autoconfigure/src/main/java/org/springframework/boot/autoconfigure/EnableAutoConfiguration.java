@@ -79,23 +79,28 @@ import org.springframework.core.io.support.SpringFactoriesLoader;
 @Retention(RetentionPolicy.RUNTIME)
 @Documented
 @Inherited
-@AutoConfigurationPackage
-@Import(AutoConfigurationImportSelector.class)
+@AutoConfigurationPackage // 注册一个 Bean 保存当前注解标注的类所在包路径
+@Import(AutoConfigurationImportSelector.class) // Spring Boot 自动配置的实现
 public @interface EnableAutoConfiguration {
 
 	/**
-	 * Environment property that can be used to override when auto-configuration is
-	 * enabled.
+	 * 可通过这个配置关闭 Spring Boot 的自动配置功能
+	 *
+	 * Environment property that can be used to override when auto-configuration is enabled.
 	 */
 	String ENABLED_OVERRIDE_PROPERTY = "spring.boot.enableautoconfiguration";
 
 	/**
+	 * 指定需要排除的自动配置类的 Class 对象
+	 *
 	 * Exclude specific auto-configuration classes such that they will never be applied.
 	 * @return the classes to exclude
 	 */
 	Class<?>[] exclude() default {};
 
 	/**
+	 * 指定需要排除的自动配置类的名称
+	 *
 	 * Exclude specific auto-configuration class names such that they will never be
 	 * applied.
 	 * @return the class names to exclude

@@ -37,6 +37,10 @@ import org.springframework.context.annotation.Import;
 @Retention(RetentionPolicy.RUNTIME)
 @Documented
 @Inherited
+/**
+ * 将当前注解所标注的类所在包名封装成一个 {@link org.springframework.boot.autoconfigure.AutoConfigurationPackages.BasePackages} 进行注册
+ * 例如 JPA 模块的会使用到这个对象（JPA entity scanner）
+ */
 @Import(AutoConfigurationPackages.Registrar.class)
 public @interface AutoConfigurationPackage {
 

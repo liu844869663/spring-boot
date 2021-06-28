@@ -79,12 +79,16 @@ class BeanDefinitionLoader {
 		Assert.notNull(registry, "Registry must not be null");
 		Assert.notEmpty(sources, "Sources must not be empty");
 		this.sources = sources;
+		// `@Component` 注解的 Bean 的读取器
 		this.annotatedReader = new AnnotatedBeanDefinitionReader(registry);
+		// XML 文件资源解析器，解析出 BeanDefinition 配置元信息对象并注册
 		this.xmlReader = new XmlBeanDefinitionReader(registry);
 		if (isGroovyPresent()) {
 			this.groovyReader = new GroovyBeanDefinitionReader(registry);
 		}
+		// `classpath` 下 BeanDefinition 的扫描器
 		this.scanner = new ClassPathBeanDefinitionScanner(registry);
+		// 只扫描 `sources` 这几个 Class 对象
 		this.scanner.addExcludeFilter(new ClassExcludeFilter(sources));
 	}
 
@@ -153,6 +157,7 @@ class BeanDefinitionLoader {
 			GroovyBeanDefinitionSource loader = BeanUtils.instantiateClass(source, GroovyBeanDefinitionSource.class);
 			load(loader);
 		}
+		// 需要带有 `@Component` 注解
 		if (isComponent(source)) {
 			this.annotatedReader.register(source);
 			return 1;

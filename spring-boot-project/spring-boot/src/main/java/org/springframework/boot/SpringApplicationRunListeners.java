@@ -25,6 +25,7 @@ import org.apache.commons.logging.Log;
 import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.core.env.ConfigurableEnvironment;
 import org.springframework.util.ReflectionUtils;
+import org.springframework.boot.context.event.EventPublishingRunListener;
 
 /**
  * A collection of {@link SpringApplicationRunListener}.
@@ -35,6 +36,10 @@ class SpringApplicationRunListeners {
 
 	private final Log log;
 
+	/**
+	 * 封装的所有 SpringApplicationRunListener
+	 * Spring Boot 在 META-INF/spring.factories 只配置 {@link EventPublishingRunListener} 监听器
+	 */
 	private final List<SpringApplicationRunListener> listeners;
 
 	SpringApplicationRunListeners(Log log, Collection<? extends SpringApplicationRunListener> listeners) {

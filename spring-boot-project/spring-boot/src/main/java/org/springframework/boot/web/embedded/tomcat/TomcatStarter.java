@@ -26,6 +26,7 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
 import org.springframework.boot.web.servlet.ServletContextInitializer;
+import org.springframework.boot.web.servlet.context.ServletWebServerApplicationContext;
 
 /**
  * {@link ServletContainerInitializer} used to trigger {@link ServletContextInitializer
@@ -49,6 +50,10 @@ class TomcatStarter implements ServletContainerInitializer {
 	@Override
 	public void onStartup(Set<Class<?>> classes, ServletContext servletContext) throws ServletException {
 		try {
+			/**
+			 * 依次执行所有的 Servlet 上下文启动器
+			 * {@link ServletWebServerApplicationContext}
+			 */
 			for (ServletContextInitializer initializer : this.initializers) {
 				initializer.onStartup(servletContext);
 			}

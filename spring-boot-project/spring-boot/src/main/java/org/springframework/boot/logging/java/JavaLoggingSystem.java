@@ -75,7 +75,9 @@ public class JavaLoggingSystem extends AbstractLoggingSystem {
 
 	@Override
 	public void beforeInitialize() {
+		// 调用父方法
 		super.beforeInitialize();
+		// 设置日志级别为 SERVER
 		Logger.getLogger("").setLevel(Level.SEVERE);
 	}
 

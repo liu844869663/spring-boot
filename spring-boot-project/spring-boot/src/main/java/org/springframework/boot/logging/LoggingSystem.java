@@ -148,13 +148,17 @@ public abstract class LoggingSystem {
 	 * @return the logging system
 	 */
 	public static LoggingSystem get(ClassLoader classLoader) {
+		// <1> 从系统参数 `org.springframework.boot.logging.LoggingSystem` 获得 LoggingSystem 类型
 		String loggingSystem = System.getProperty(SYSTEM_PROPERTY);
+		// <2> 如果非空，说明配置了，那么创建一个该类型的 LoggingSystem 实例对象
 		if (StringUtils.hasLength(loggingSystem)) {
 			if (NONE.equals(loggingSystem)) {
 				return new NoOpLoggingSystem();
 			}
 			return get(classLoader, loggingSystem);
 		}
+		// <3> 否则，没有配置，则通过顺序依次尝试创建对应类型的 LoggingSystem 实例对象
+		// logback > log4j2 > java logging
 		return SYSTEMS.entrySet().stream().filter((entry) -> ClassUtils.isPresent(entry.getKey(), classLoader))
 				.map((entry) -> get(classLoader, entry.getValue())).findFirst()
 				.orElseThrow(() -> new IllegalStateException("No suitable logging system located"));

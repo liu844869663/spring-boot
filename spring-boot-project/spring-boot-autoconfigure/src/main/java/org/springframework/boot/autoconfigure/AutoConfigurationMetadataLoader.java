@@ -44,12 +44,15 @@ final class AutoConfigurationMetadataLoader {
 
 	static AutoConfigurationMetadata loadMetadata(ClassLoader classLoader, String path) {
 		try {
+			// <1> 获取所有 `META-INF/spring-autoconfigure-metadata.properties` 文件 URL
 			Enumeration<URL> urls = (classLoader != null) ? classLoader.getResources(path)
 					: ClassLoader.getSystemResources(path);
 			Properties properties = new Properties();
+			// <2> 加载这些文件并将他们的属性添加到 Properties 中
 			while (urls.hasMoreElements()) {
 				properties.putAll(PropertiesLoaderUtils.loadProperties(new UrlResource(urls.nextElement())));
 			}
+			// <3> 将这个 Properties 封装到 PropertiesAutoConfigurationMetadata 对象中并返回
 			return loadMetadata(properties);
 		}
 		catch (IOException ex) {
@@ -106,7 +109,9 @@ final class AutoConfigurationMetadataLoader {
 
 		@Override
 		public String get(String className, String key, String defaultValue) {
+			// 获取 `类名.注解简称` 对应的值，也就是这个类上面该注解的值
 			String value = this.properties.getProperty(className + "." + key);
+			// 如果存在该注解的值，则返回，没有的话返回指定的默认值
 			return (value != null) ? value : defaultValue;
 		}
 

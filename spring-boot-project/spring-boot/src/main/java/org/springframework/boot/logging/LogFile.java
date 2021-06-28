@@ -128,8 +128,11 @@ public class LogFile {
 	 * suitable properties
 	 */
 	public static LogFile get(PropertyResolver propertyResolver) {
+		// 获取 `logging.file.name` 指定的日志文件名称，也可以通过 `logging.file` 指定
 		String file = getLogFileProperty(propertyResolver, FILE_NAME_PROPERTY, FILE_PROPERTY);
+		// 获取 `logging.file.path` 指定的日志文件保存路径，也可以通过 `logging.path` 指定
 		String path = getLogFileProperty(propertyResolver, FILE_PATH_PROPERTY, PATH_PROPERTY);
+		// 创建一个日志文件
 		if (StringUtils.hasLength(file) || StringUtils.hasLength(path)) {
 			return new LogFile(file, path);
 		}

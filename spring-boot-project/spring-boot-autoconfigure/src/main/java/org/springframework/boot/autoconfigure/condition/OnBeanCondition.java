@@ -37,6 +37,7 @@ import org.springframework.beans.factory.HierarchicalBeanFactory;
 import org.springframework.beans.factory.ListableBeanFactory;
 import org.springframework.beans.factory.config.BeanDefinition;
 import org.springframework.beans.factory.config.ConfigurableListableBeanFactory;
+import org.springframework.boot.autoconfigure.AutoConfigurationImportFilter;
 import org.springframework.boot.autoconfigure.AutoConfigurationMetadata;
 import org.springframework.boot.autoconfigure.condition.ConditionMessage.Style;
 import org.springframework.context.annotation.Bean;
@@ -81,10 +82,19 @@ class OnBeanCondition extends FilteringSpringBootCondition implements Configurat
 		return ConfigurationPhase.REGISTER_BEAN;
 	}
 
+	/**
+	 * 该方法来自 {@link AutoConfigurationImportFilter} 判断这些自动配置类是否符合条件（`@ConditionalOnBean` 等）
+	 */
 	@Override
 	protected final ConditionOutcome[] getOutcomes(String[] autoConfigurationClasses,
 			AutoConfigurationMetadata autoConfigurationMetadata) {
 		ConditionOutcome[] outcomes = new ConditionOutcome[autoConfigurationClasses.length];
+		/*
+		 * 遍历这些自动配置类，依次进行处理
+		 * 会依次处理他们的 `@ConditionalOnBean` 和 `@ConditionalOnSingleCandidate` 注解
+		 * 因为这里仅仅是 AutoConfigurationImportFilter 的过滤阶段，还没有开始 Spring Bean 的加载
+		 * 所以这里只能先判断是否存在对应的 Class 类对象
+		 */
 		for (int i = 0; i < outcomes.length; i++) {
 			String autoConfigurationClass = autoConfigurationClasses[i];
 			if (autoConfigurationClass != null) {
@@ -110,13 +120,20 @@ class OnBeanCondition extends FilteringSpringBootCondition implements Configurat
 		return null;
 	}
 
+	/**
+	 * 该方法来自 {@link SpringBootCondition} 判断某个 Bean 是否符合注入条件（`@ConditionalOnBean` 等）
+	 */
 	@Override
 	public ConditionOutcome getMatchOutcome(ConditionContext context, AnnotatedTypeMetadata metadata) {
 		ConditionMessage matchMessage = ConditionMessage.empty();
 		MergedAnnotations annotations = metadata.getAnnotations();
+		// <1> 如果这个 Bean 存在 `@ConditionalOnBean` 注解
 		if (annotations.isPresent(ConditionalOnBean.class)) {
+			// <1.1> 将注解的元信息封装成一个 Spec 对象，该对象便于操作注解的元信息
 			Spec<ConditionalOnBean> spec = new Spec<>(context, metadata, annotations, ConditionalOnBean.class);
+			// <1.2> 从 Spring 应用上下文中判断是否都存在指定的类型或者名称 Bean
 			MatchResult matchResult = getMatchingBeans(context, spec);
+			// <1.3> 如果有一个不存在，则返回不匹配
 			if (!matchResult.isAllMatched()) {
 				String reason = createOnBeanNoMatchReason(matchResult);
 				return ConditionOutcome.noMatch(spec.message().because(reason));
@@ -124,9 +141,13 @@ class OnBeanCondition extends FilteringSpringBootCondition implements Configurat
 			matchMessage = spec.message(matchMessage).found("bean", "beans").items(Style.QUOTE,
 					matchResult.getNamesOfAllMatches());
 		}
+		// <2> 如果这个 Bean 存在 `@ConditionalOnSingleCandidate` 注解
 		if (metadata.isAnnotated(ConditionalOnSingleCandidate.class.getName())) {
+			// <2.1> 将注解的元信息封装成一个 Spec 对象，该对象便于操作注解的元信息
 			Spec<ConditionalOnSingleCandidate> spec = new SingleCandidateSpec(context, metadata, annotations);
+			// <2.2> 从 Spring 应用上下文中判断是否都存在指定的类型或者名称 Bean，且必须只存在一个对应的 Bean
 			MatchResult matchResult = getMatchingBeans(context, spec);
+			// <2.3> 如果有一个不满足条件，则返回不匹配
 			if (!matchResult.isAllMatched()) {
 				return ConditionOutcome.noMatch(spec.message().didNotFind("any beans").atAll());
 			}
@@ -138,10 +159,13 @@ class OnBeanCondition extends FilteringSpringBootCondition implements Configurat
 			matchMessage = spec.message(matchMessage).found("a primary bean from beans").items(Style.QUOTE,
 					matchResult.getNamesOfAllMatches());
 		}
+		// <3> 如果这个 Bean 存在 `@ConditionalOnMissingBean` 注解
 		if (metadata.isAnnotated(ConditionalOnMissingBean.class.getName())) {
-			Spec<ConditionalOnMissingBean> spec = new Spec<>(context, metadata, annotations,
-					ConditionalOnMissingBean.class);
+			// <3.1> 将注解的元信息封装成一个 Spec 对象，该对象便于操作注解的元信息
+			Spec<ConditionalOnMissingBean> spec = new Spec<>(context, metadata, annotations, ConditionalOnMissingBean.class);
+			// <3.2> 从 Spring 应用上下文中判断是否都存在指定的类型或者名称 Bean
 			MatchResult matchResult = getMatchingBeans(context, spec);
+			// <3.3> 如果都存在，则返回不匹配
 			if (matchResult.isAnyMatched()) {
 				String reason = createOnMissingBeanNoMatchReason(matchResult);
 				return ConditionOutcome.noMatch(spec.message().because(reason));

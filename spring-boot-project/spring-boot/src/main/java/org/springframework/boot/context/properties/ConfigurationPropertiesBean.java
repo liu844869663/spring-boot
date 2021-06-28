@@ -59,14 +59,25 @@ import org.springframework.validation.annotation.Validated;
  */
 public final class ConfigurationPropertiesBean {
 
+	/**
+	 * Bean 的名称
+	 */
 	private final String name;
-
+	/**
+	 * Bean 的实例对象
+	 */
 	private final Object instance;
-
+	/**
+	 * Bean 的 `@ConfigurationProperties` 注解
+	 */
 	private final ConfigurationProperties annotation;
-
+	/**
+	 * `@Bean` 对应的方法资源对象，包括实例对象和注解信息
+	 */
 	private final Bindable<?> bindTarget;
-
+	/**
+	 * `@Bean` 对应的方法
+	 */
 	private final BindMethod bindMethod;
 
 	private ConfigurationPropertiesBean(String name, Object instance, ConfigurationProperties annotation,
@@ -197,7 +208,9 @@ public final class ConfigurationPropertiesBean {
 	 * {@link ConfigurationProperties @ConfigurationProperties}
 	 */
 	public static ConfigurationPropertiesBean get(ApplicationContext applicationContext, Object bean, String beanName) {
+		// <1> 找到这个 `beanName` 对应的工厂方法，例如 `@Bean` 标注的方法就是一个工厂方法，不是 `@Bean` 的话这里为空
 		Method factoryMethod = findFactoryMethod(applicationContext, beanName);
+		// <2> 创建一个 ConfigurationPropertiesBean 对象，包含了这个 Bean 的 `@ConfigurationProperties` 注解信息
 		return create(beanName, bean, bean.getClass(), factoryMethod);
 	}
 
@@ -254,19 +267,26 @@ public final class ConfigurationPropertiesBean {
 	}
 
 	private static ConfigurationPropertiesBean create(String name, Object instance, Class<?> type, Method factory) {
+		// <1> 找到这个 Bean 上面的 `@ConfigurationProperties` 注解
+		// 如果是 `@Bean` 标注的方法 Bean，也会尝试从所在的 Class 类上面获取
 		ConfigurationProperties annotation = findAnnotation(instance, type, factory, ConfigurationProperties.class);
+		// <2> 如果没有配置 `@ConfigurationProperties` 注解，则直接返回 `null`
 		if (annotation == null) {
 			return null;
 		}
+		// <3> 找到这个 Bean 上面的 `@Validated` 注解
 		Validated validated = findAnnotation(instance, type, factory, Validated.class);
+		// <4> 将 `@ConfigurationProperties`、`Validated`注解信息，目标 Bean 以及它的 Class 对象，绑定到一个 Bindable 对象中
 		Annotation[] annotations = (validated != null) ? new Annotation[] { annotation, validated }
 				: new Annotation[] { annotation };
 		ResolvableType bindType = (factory != null) ? ResolvableType.forMethodReturnType(factory)
 				: ResolvableType.forClass(type);
+
 		Bindable<Object> bindTarget = Bindable.of(bindType).withAnnotations(annotations);
 		if (instance != null) {
 			bindTarget = bindTarget.withExistingValue(instance);
 		}
+		// <5> 将 `beanName`、目标 Bean、`ConfigurationProperties` 注解、第 `4` 步的 Bindable 对象封装到一个 ConfigurationPropertiesBean 对象中
 		return new ConfigurationPropertiesBean(name, instance, annotation, bindTarget);
 	}
 

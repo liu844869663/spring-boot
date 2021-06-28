@@ -105,11 +105,13 @@ public abstract class DynamicRegistrationBean<D extends Registration.Dynamic> ex
 
 	@Override
 	protected final void register(String description, ServletContext servletContext) {
+		// 抽象方法，交由子类实现
 		D registration = addRegistration(description, servletContext);
 		if (registration == null) {
 			logger.info(StringUtils.capitalize(description) + " was not registered (possibly already registered?)");
 			return;
 		}
+		// 设置初始化参数，也就是设置 `Map<String, String> initParameters` 参数
 		configure(registration);
 	}
 

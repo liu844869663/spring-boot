@@ -42,11 +42,16 @@ public abstract class SpringBootCondition implements Condition {
 
 	@Override
 	public final boolean matches(ConditionContext context, AnnotatedTypeMetadata metadata) {
+		// <1> 从注解元信息中获取所标注的`类名`（或者`类名#方法名`）
 		String classOrMethodName = getClassOrMethodName(metadata);
 		try {
+			// <2> 获取匹配结果（包含匹配消息），抽象方法，交由子类实现
 			ConditionOutcome outcome = getMatchOutcome(context, metadata);
+			// <3> 打印匹配日志
 			logOutcome(classOrMethodName, outcome);
+			// <4> 向 ConditionEvaluationReport 中记录本次的匹配结果
 			recordEvaluation(context, classOrMethodName, outcome);
+			// <5> 返回匹配结果
 			return outcome.isMatch();
 		}
 		catch (NoClassDefFoundError ex) {
@@ -117,6 +122,8 @@ public abstract class SpringBootCondition implements Condition {
 	public abstract ConditionOutcome getMatchOutcome(ConditionContext context, AnnotatedTypeMetadata metadata);
 
 	/**
+	 * 判断是否匹配指定的 Condition 们中的任意一个
+	 *
 	 * Return true if any of the specified conditions match.
 	 * @param context the context
 	 * @param metadata the annotation meta-data
@@ -125,6 +132,9 @@ public abstract class SpringBootCondition implements Condition {
 	 */
 	protected final boolean anyMatches(ConditionContext context, AnnotatedTypeMetadata metadata,
 			Condition... conditions) {
+		/*
+		 * 遍历这些 Condition，有一个匹配成功则返回 `true`
+		 */
 		for (Condition condition : conditions) {
 			if (matches(context, metadata, condition)) {
 				return true;

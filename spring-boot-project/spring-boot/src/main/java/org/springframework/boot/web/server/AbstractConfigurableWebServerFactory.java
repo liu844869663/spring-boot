@@ -170,7 +170,9 @@ public abstract class AbstractConfigurableWebServerFactory implements Configurab
 	 */
 	protected final File createTempDir(String prefix) {
 		try {
+			// 创建一个临时目录，临时目录下的 `tomcat.端口号` 目录
 			File tempDir = Files.createTempDirectory(prefix + "." + getPort() + ".").toFile();
+			// 应用退出时会删除
 			tempDir.deleteOnExit();
 			return tempDir;
 		}

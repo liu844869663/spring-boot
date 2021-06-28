@@ -49,6 +49,8 @@ import org.springframework.core.annotation.AliasFor;
 public @interface ConfigurationProperties {
 
 	/**
+	 * 指定的配置项前缀
+	 *
 	 * The prefix of the properties that are valid to bind to this object. Synonym for
 	 * {@link #prefix()}. A valid prefix is defined by one or more words separated with
 	 * dots (e.g. {@code "acme.system.feature"}).
@@ -58,6 +60,8 @@ public @interface ConfigurationProperties {
 	String value() default "";
 
 	/**
+	 * 指定的配置项前缀
+	 *
 	 * The prefix of the properties that are valid to bind to this object. Synonym for
 	 * {@link #value()}. A valid prefix is defined by one or more words separated with
 	 * dots (e.g. {@code "acme.system.feature"}).
@@ -67,6 +71,8 @@ public @interface ConfigurationProperties {
 	String prefix() default "";
 
 	/**
+	 * 是否忽略无效的字段
+	 *
 	 * Flag to indicate that when binding to this object invalid fields should be ignored.
 	 * Invalid means invalid according to the binder that is used, and usually this means
 	 * fields of the wrong type (or that cannot be coerced into the correct type).
@@ -75,6 +81,8 @@ public @interface ConfigurationProperties {
 	boolean ignoreInvalidFields() default false;
 
 	/**
+	 * 是否忽略不知道的字段
+	 *
 	 * Flag to indicate that when binding to this object unknown fields should be ignored.
 	 * An unknown field could be a sign of a mistake in the Properties.
 	 * @return the flag value (default true)

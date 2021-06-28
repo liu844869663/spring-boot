@@ -63,11 +63,11 @@ import org.springframework.web.servlet.DispatcherServlet;
  * @author Brian Clozel
  * @since 2.0.0
  */
-@AutoConfigureOrder(Ordered.HIGHEST_PRECEDENCE)
-@Configuration(proxyBeanMethods = false)
-@ConditionalOnWebApplication(type = Type.SERVLET)
-@ConditionalOnClass(DispatcherServlet.class)
-@AutoConfigureAfter(ServletWebServerFactoryAutoConfiguration.class)
+@AutoConfigureOrder(Ordered.HIGHEST_PRECEDENCE) // 最高优先级的自动配置
+@Configuration(proxyBeanMethods = false) // 作为一个配置类，不进行 CGLIB 提升
+@ConditionalOnWebApplication(type = Type.SERVLET) // Servlet 应用的类型才注入当前 Bean
+@ConditionalOnClass(DispatcherServlet.class) // 存在 DispatcherServlet 这个类才注入当前 Bean
+@AutoConfigureAfter(ServletWebServerFactoryAutoConfiguration.class) // 在 ServletWebServerFactoryAutoConfiguration 后面进行自动配置
 public class DispatcherServletAutoConfiguration {
 
 	/**
@@ -80,12 +80,17 @@ public class DispatcherServletAutoConfiguration {
 	 */
 	public static final String DEFAULT_DISPATCHER_SERVLET_REGISTRATION_BEAN_NAME = "dispatcherServletRegistration";
 
+	// 作为一个配置类，不进行 CGLIB 提升
 	@Configuration(proxyBeanMethods = false)
+	// 满足条件则注入当前 DispatcherServlet（需要 Spring 上下文中不存在）
 	@Conditional(DefaultDispatcherServletCondition.class)
+	// 存在 ServletRegistration 这个类才注入当前 Bean
 	@ConditionalOnClass(ServletRegistration.class)
+	// 注入两个配置对象
 	@EnableConfigurationProperties({ HttpProperties.class, WebMvcProperties.class })
 	protected static class DispatcherServletConfiguration {
 
+		// 定义一个 DispatcherServlet 的 Bean
 		@Bean(name = DEFAULT_DISPATCHER_SERVLET_BEAN_NAME)
 		public DispatcherServlet dispatcherServlet(HttpProperties httpProperties, WebMvcProperties webMvcProperties) {
 			DispatcherServlet dispatcherServlet = new DispatcherServlet();
@@ -107,14 +112,21 @@ public class DispatcherServletAutoConfiguration {
 
 	}
 
+	// 作为一个配置类，不进行 CGLIB 提升
 	@Configuration(proxyBeanMethods = false)
+	// 满足条件则注入当前 DispatcherServletRegistrationBean
 	@Conditional(DispatcherServletRegistrationCondition.class)
+	// 存在 ServletRegistration 这个类才注入当前 Bean
 	@ConditionalOnClass(ServletRegistration.class)
+	// 注入一个配置对象
 	@EnableConfigurationProperties(WebMvcProperties.class)
+	// 先注入上面的 DispatcherServletConfiguration 对象
 	@Import(DispatcherServletConfiguration.class)
 	protected static class DispatcherServletRegistrationConfiguration {
 
+		// 为 DispatcherServlet 定义一个 RegistrationBean 对象，目的是往 ServletContext 上下文中添加 DispatcherServlet
 		@Bean(name = DEFAULT_DISPATCHER_SERVLET_REGISTRATION_BEAN_NAME)
+		// 需要存在名称为 `dispatcherServlet` 类型为 DispatcherServlet 的 Bean
 		@ConditionalOnBean(value = DispatcherServlet.class, name = DEFAULT_DISPATCHER_SERVLET_BEAN_NAME)
 		public DispatcherServletRegistrationBean dispatcherServletRegistration(DispatcherServlet dispatcherServlet,
 				WebMvcProperties webMvcProperties, ObjectProvider<MultipartConfigElement> multipartConfig) {
@@ -122,6 +134,7 @@ public class DispatcherServletAutoConfiguration {
 					webMvcProperties.getServlet().getPath());
 			registration.setName(DEFAULT_DISPATCHER_SERVLET_BEAN_NAME);
 			registration.setLoadOnStartup(webMvcProperties.getServlet().getLoadOnStartup());
+			// 如果有 MultipartConfigElement 配置则进行设置
 			multipartConfig.ifAvailable(registration::setMultipartConfig);
 			return registration;
 		}

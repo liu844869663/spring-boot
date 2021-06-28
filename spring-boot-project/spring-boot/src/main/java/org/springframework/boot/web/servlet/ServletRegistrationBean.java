@@ -174,7 +174,9 @@ public class ServletRegistrationBean<T extends Servlet> extends DynamicRegistrat
 
 	@Override
 	protected ServletRegistration.Dynamic addRegistration(String description, ServletContext servletContext) {
+		// 获取 Servlet 的名称
 		String name = getServletName();
+		// 将该 Servlet 添加至 ServletContext 上下文中
 		return servletContext.addServlet(name, this.servlet);
 	}
 
@@ -186,6 +188,7 @@ public class ServletRegistrationBean<T extends Servlet> extends DynamicRegistrat
 	@Override
 	protected void configure(ServletRegistration.Dynamic registration) {
 		super.configure(registration);
+		// 设置需要拦截的 URL，默认 `/*`
 		String[] urlMapping = StringUtils.toStringArray(this.urlMappings);
 		if (urlMapping.length == 0 && this.alwaysMapUrl) {
 			urlMapping = DEFAULT_MAPPINGS;
@@ -193,6 +196,7 @@ public class ServletRegistrationBean<T extends Servlet> extends DynamicRegistrat
 		if (!ObjectUtils.isEmpty(urlMapping)) {
 			registration.addMapping(urlMapping);
 		}
+		// 设置需要加载的优先级
 		registration.setLoadOnStartup(this.loadOnStartup);
 		if (this.multipartConfig != null) {
 			registration.setMultipartConfig(this.multipartConfig);

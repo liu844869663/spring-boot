@@ -108,6 +108,8 @@ public class Log4J2LoggingSystem extends Slf4JLoggingSystem {
 
 	@Override
 	protected String[] getStandardConfigLocations() {
+		// 获取把约定的日志配置文件路径，优先加载到哪个就取哪个
+		// log4j2.properties > log4j2.xml
 		return getCurrentlySupportedConfigLocations();
 	}
 
@@ -142,22 +144,31 @@ public class Log4J2LoggingSystem extends Slf4JLoggingSystem {
 
 	@Override
 	public void beforeInitialize() {
+		// 获取 LoggerContext 日志上下文
 		LoggerContext loggerContext = getLoggerContext();
+		// 已经初始化了则直接返回
 		if (isAlreadyInitialized(loggerContext)) {
 			return;
 		}
+		// 调用父方法
 		super.beforeInitialize();
+		// 添加 FILTER 过滤器，因为还未初始化好，不打印日志
 		loggerContext.getConfiguration().addFilter(FILTER);
 	}
 
 	@Override
 	public void initialize(LoggingInitializationContext initializationContext, String configLocation, LogFile logFile) {
+		// 获取 LoggerContext 日志上下文
 		LoggerContext loggerContext = getLoggerContext();
+		// 已经初始化了则直接返回
 		if (isAlreadyInitialized(loggerContext)) {
 			return;
 		}
+		// 移除前面添加的 FILTER 过滤器，因为马上初始化好了，支持打印日志
 		loggerContext.getConfiguration().removeFilter(FILTER);
+		// 调用父方法
 		super.initialize(initializationContext, configLocation, logFile);
+		// 标记为已经初始化
 		markAsInitialized(loggerContext);
 	}
 
@@ -174,16 +185,21 @@ public class Log4J2LoggingSystem extends Slf4JLoggingSystem {
 	@Override
 	protected void loadConfiguration(LoggingInitializationContext initializationContext, String location,
 			LogFile logFile) {
+		// 调用父方法
 		super.loadConfiguration(initializationContext, location, logFile);
+		// 加载配置文件到 LoggerContext 中
 		loadConfiguration(location, logFile);
 	}
 
 	protected void loadConfiguration(String location, LogFile logFile) {
 		Assert.notNull(location, "Location must not be null");
 		try {
+			// 获取 LoggerContext 日志上下文
 			LoggerContext ctx = getLoggerContext();
+			// 获取日志配置文件资源
 			URL url = ResourceUtils.getURL(location);
 			ConfigurationSource source = getConfigurationSource(url);
+			// 根据配置信息启动 log4j2，日志配置文件的修改会被监听到而“立马”（有时间间隔）生效
 			ctx.start(ConfigurationFactory.getInstance().getConfiguration(ctx, source));
 		}
 		catch (Exception ex) {

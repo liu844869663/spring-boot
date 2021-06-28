@@ -56,6 +56,8 @@ public class MetadataStore {
 
 	public ConfigurationMetadata readMetadata() {
 		try {
+			// 先获取 `META-INF/spring-configuration-metadata.json` 这个文件
+			// 通过 JsonMarshaller 将该文件数据读取至 ConfigurationMetadata 对象中
 			return readMetadata(getMetadataResource().openInputStream());
 		}
 		catch (IOException ex) {

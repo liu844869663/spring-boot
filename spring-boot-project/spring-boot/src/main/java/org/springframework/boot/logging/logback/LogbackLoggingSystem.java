@@ -85,6 +85,7 @@ public class LogbackLoggingSystem extends Slf4JLoggingSystem {
 		@Override
 		public FilterReply decide(Marker marker, ch.qos.logback.classic.Logger logger, Level level, String format,
 				Object[] params, Throwable t) {
+			// 一律拒绝
 			return FilterReply.DENY;
 		}
 
@@ -101,22 +102,31 @@ public class LogbackLoggingSystem extends Slf4JLoggingSystem {
 
 	@Override
 	public void beforeInitialize() {
+		// <1> 获得 LoggerContext 日志上下文
 		LoggerContext loggerContext = getLoggerContext();
+		// <2> 如果 LoggerContext 已有 LoggingSystem，表示已经初始化，则直接返回
 		if (isAlreadyInitialized(loggerContext)) {
 			return;
 		}
+		// <3> 调用父方法
 		super.beforeInitialize();
+		// <4> 添加 FILTER 到其中，因为还未初始化，不打印日志
 		loggerContext.getTurboFilterList().add(FILTER);
 	}
 
 	@Override
 	public void initialize(LoggingInitializationContext initializationContext, String configLocation, LogFile logFile) {
+		// <1> 获得 LoggerContext 日志上下文
 		LoggerContext loggerContext = getLoggerContext();
+		// <2> 如果 LoggerContext 已有 LoggingSystem，表示已经初始化，则直接返回
 		if (isAlreadyInitialized(loggerContext)) {
 			return;
 		}
+		// <3> 调用父方法
 		super.initialize(initializationContext, configLocation, logFile);
+		// <4> 移除之前添加的 FILTER，可以开始打印日志了
 		loggerContext.getTurboFilterList().remove(FILTER);
+		// <5> 标记为已初始化，往 LoggerContext 中添加一个 LoggingSystem 对象
 		markAsInitialized(loggerContext);
 		if (StringUtils.hasText(System.getProperty(CONFIGURATION_FILE_PROPERTY))) {
 			getLogger(LogbackLoggingSystem.class.getName()).warn("Ignoring '" + CONFIGURATION_FILE_PROPERTY
@@ -127,11 +137,15 @@ public class LogbackLoggingSystem extends Slf4JLoggingSystem {
 	@Override
 	protected void loadDefaults(LoggingInitializationContext initializationContext, LogFile logFile) {
 		LoggerContext context = getLoggerContext();
+		// <1> 重置 LoggerContext 对象
+		// 这里会添加一个 LevelChangePropagator 监听器，当日志级别被修改时会立即生效，而不用重启应用
 		stopAndReset(context);
+		// <2> 如果开启 debug 模式则添加一个 OnConsoleStatusListener 监听器
 		boolean debug = Boolean.getBoolean("logback.debug");
 		if (debug) {
 			StatusListenerConfigHelper.addOnConsoleListenerInstance(context, new OnConsoleStatusListener());
 		}
+		// <3> 往 LoggerContext 中添加默认的日志配置
 		LogbackConfigurator configurator = debug ? new DebugLogbackConfigurator(context)
 				: new LogbackConfigurator(context);
 		Environment environment = initializationContext.getEnvironment();
@@ -141,22 +155,30 @@ public class LogbackLoggingSystem extends Slf4JLoggingSystem {
 				"${logging.pattern.dateformat:${LOG_DATEFORMAT_PATTERN:yyyy-MM-dd HH:mm:ss.SSS}}"));
 		context.putProperty(LoggingSystemProperties.ROLLING_FILE_NAME_PATTERN, environment
 				.resolvePlaceholders("${logging.pattern.rolling-file-name:${LOG_FILE}.%d{yyyy-MM-dd}.%i.gz}"));
+		// <4> 创建 DefaultLogbackConfiguration 对象，设置到 `configurator` 中
+		// 设置转换规则，例如颜色转换，空格转换
 		new DefaultLogbackConfiguration(initializationContext, logFile).apply(configurator);
+		// <5> 设置日志文件，按天切割
 		context.setPackagingDataEnabled(true);
 	}
 
 	@Override
 	protected void loadConfiguration(LoggingInitializationContext initializationContext, String location,
 			LogFile logFile) {
+		// <1> 调用父方法
 		super.loadConfiguration(initializationContext, location, logFile);
 		LoggerContext loggerContext = getLoggerContext();
+		// <2> 重置 LoggerContext 对象
+		// 这里会添加一个 LevelChangePropagator 监听器，当日志级别被修改时会立即生效，而不用重启应用
 		stopAndReset(loggerContext);
 		try {
+			// <3> 读取配置文件并解析，配置到 LoggerContext 中
 			configureByResourceUrl(initializationContext, loggerContext, ResourceUtils.getURL(location));
 		}
 		catch (Exception ex) {
 			throw new IllegalStateException("Could not initialize Logback logging from " + location, ex);
 		}
+		// <4> 判断是否发生错误，有的话抛出 IllegalStateException 异常
 		List<Status> statuses = loggerContext.getStatusManager().getCopyOfStatusList();
 		StringBuilder errors = new StringBuilder();
 		for (Status status : statuses) {
@@ -183,14 +205,19 @@ public class LogbackLoggingSystem extends Slf4JLoggingSystem {
 	}
 
 	private void stopAndReset(LoggerContext loggerContext) {
+		// 停止
 		loggerContext.stop();
+		// 重置
 		loggerContext.reset();
+		// 如果有桥接器
 		if (isBridgeHandlerInstalled()) {
+			// 添加一个日志级别的监听器，能够及时更新日志级别
 			addLevelChangePropagator(loggerContext);
 		}
 	}
 
 	private boolean isBridgeHandlerInstalled() {
+		// 没有 SLF4JBridgeHandler 对象
 		if (!isBridgeHandlerAvailable()) {
 			return false;
 		}
@@ -199,12 +226,12 @@ public class LogbackLoggingSystem extends Slf4JLoggingSystem {
 		return handlers.length == 1 && handlers[0] instanceof SLF4JBridgeHandler;
 	}
 
-	private void addLevelChangePropagator(LoggerContext loggerContext) {
-		LevelChangePropagator levelChangePropagator = new LevelChangePropagator();
-		levelChangePropagator.setResetJUL(true);
-		levelChangePropagator.setContext(loggerContext);
-		loggerContext.addListener(levelChangePropagator);
-	}
+		private void addLevelChangePropagator(LoggerContext loggerContext) {
+			LevelChangePropagator levelChangePropagator = new LevelChangePropagator();
+			levelChangePropagator.setResetJUL(true);
+			levelChangePropagator.setContext(loggerContext);
+			loggerContext.addListener(levelChangePropagator);
+		}
 
 	@Override
 	public void cleanUp() {
@@ -217,8 +244,11 @@ public class LogbackLoggingSystem extends Slf4JLoggingSystem {
 
 	@Override
 	protected void reinitialize(LoggingInitializationContext initializationContext) {
+		// 重置
 		getLoggerContext().reset();
+		// 清空资源
 		getLoggerContext().getStatusManager().clear();
+		// 加载指定的配置文件，此时使用约定的配置文件
 		loadConfiguration(initializationContext, getSelfInitializationConfig(), null);
 	}
 
@@ -278,6 +308,7 @@ public class LogbackLoggingSystem extends Slf4JLoggingSystem {
 
 	private LoggerContext getLoggerContext() {
 		ILoggerFactory factory = StaticLoggerBinder.getSingleton().getLoggerFactory();
+		// 这里会校验 `factory` 是否为 LoggerContext 类型
 		Assert.isInstanceOf(LoggerContext.class, factory,
 				String.format(
 						"LoggerFactory is not a Logback LoggerContext but Logback is on "

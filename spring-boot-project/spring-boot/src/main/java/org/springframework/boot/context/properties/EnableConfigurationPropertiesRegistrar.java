@@ -16,14 +16,14 @@
 
 package org.springframework.boot.context.properties;
 
-import java.util.Arrays;
-import java.util.Set;
-import java.util.stream.Collectors;
-
 import org.springframework.beans.factory.support.BeanDefinitionRegistry;
 import org.springframework.context.annotation.ImportBeanDefinitionRegistrar;
 import org.springframework.core.annotation.MergedAnnotation;
 import org.springframework.core.type.AnnotationMetadata;
+
+import java.util.Arrays;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 /**
  * {@link ImportBeanDefinitionRegistrar} for
@@ -35,8 +35,13 @@ class EnableConfigurationPropertiesRegistrar implements ImportBeanDefinitionRegi
 
 	@Override
 	public void registerBeanDefinitions(AnnotationMetadata metadata, BeanDefinitionRegistry registry) {
+		// <1> 先注册两个内部 Bean
 		registerInfrastructureBeans(registry);
+		// <2> 创建一个 ConfigurationPropertiesBeanRegistrar 对象
 		ConfigurationPropertiesBeanRegistrar beanRegistrar = new ConfigurationPropertiesBeanRegistrar(registry);
+		// <3> 获取 `@EnableConfigurationProperties` 注解指定的 Class 类对象们
+		// <4> 依次注册指定的 Class 类对应的 BeanDefinition
+		// 这样一来这个 Class 不用标注 `@Component` 就可以注入这个配置属性对象了
 		getTypes(metadata).forEach(beanRegistrar::register);
 	}
 
@@ -46,9 +51,16 @@ class EnableConfigurationPropertiesRegistrar implements ImportBeanDefinitionRegi
 				.filter((type) -> void.class != type).collect(Collectors.toSet());
 	}
 
+	/**
+	 * 可参考 ConfigurationPropertiesAutoConfiguration 自动配置类
+	 */
 	@SuppressWarnings("deprecation")
 	static void registerInfrastructureBeans(BeanDefinitionRegistry registry) {
+		// 注册一个 ConfigurationPropertiesBindingPostProcessor 类型的 BeanDefinition（内部角色），如果不存在的话
+		// 同时也会注册 ConfigurationPropertiesBinder 和 ConfigurationPropertiesBinder.Factory 两个 Bean，如果不存在的话
 		ConfigurationPropertiesBindingPostProcessor.register(registry);
+		// 注册一个 ConfigurationBeanFactoryMetadata 类型的 BeanDefinition（内部角色）
+		// 这个 Bean 从 Spring 2.2.0 开始就被废弃了
 		ConfigurationBeanFactoryMetadata.register(registry);
 	}
 

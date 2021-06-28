@@ -83,9 +83,14 @@ class ConfigurationPropertiesBinder {
 	}
 
 	BindResult<?> bind(ConfigurationPropertiesBean propertiesBean) {
+		// <1> 获取这个 Bean 的 Bindable 对象（包含了 `@ConfigurationProperties`、`@Validated` 配置信息和这个 Bean）
 		Bindable<?> target = propertiesBean.asBindTarget();
+		// <2> 获取这个 Bean 的 `@ConfigurationProperties` 注解信息
 		ConfigurationProperties annotation = propertiesBean.getAnnotation();
+		// <3> 获取一个 BindHandler 绑定处理器
 		BindHandler bindHandler = getBindHandler(target, annotation);
+		// <4> 获取一个 Binder 对象，包含了 Spring 应用上下文的所有配置信息，占位符处理器，类型转换器
+		// <5> 通过这个 Binder 将指定 `prefix` 前缀的属性值设置到这个 Bean 中，会借助 Conversion 类型转换器进行类型转换，过程复杂，没看懂...
 		return getBinder().bind(annotation.prefix(), target, bindHandler);
 	}
 
@@ -104,21 +109,28 @@ class ConfigurationPropertiesBinder {
 	}
 
 	private <T> BindHandler getBindHandler(Bindable<T> target, ConfigurationProperties annotation) {
+		// <1> 获取几个 Validator 校验器
 		List<Validator> validators = getValidators(target);
+		// <2> 创建一个最顶层的 BindHandler
 		BindHandler handler = new IgnoreTopLevelConverterNotFoundBindHandler();
+		// <3> 如果忽略无效的字段（默认为 `false`）
 		if (annotation.ignoreInvalidFields()) {
 			handler = new IgnoreErrorsBindHandler(handler);
 		}
+		// <4> 如果不忽略不知道的字段（默认也不会进入这里）
 		if (!annotation.ignoreUnknownFields()) {
 			UnboundElementsSourceFilter filter = new UnboundElementsSourceFilter();
 			handler = new NoUnboundElementsBindHandler(handler, filter);
 		}
+		// <5> 如果检验器不为空，则将其封装成 ValidationBindHandler 对象，里面保存了这几个 Validator
 		if (!validators.isEmpty()) {
 			handler = new ValidationBindHandler(handler, validators.toArray(new Validator[0]));
 		}
+		// <6> 获取 ConfigurationPropertiesBindHandlerAdvisor 对 `handler` 应用，暂时忽略
 		for (ConfigurationPropertiesBindHandlerAdvisor advisor : getBindHandlerAdvisors()) {
 			handler = advisor.apply(handler);
 		}
+		// <7> 返回这个 `handler` 配置绑定处理器
 		return handler;
 	}
 
@@ -150,8 +162,11 @@ class ConfigurationPropertiesBinder {
 
 	private Binder getBinder() {
 		if (this.binder == null) {
-			this.binder = new Binder(getConfigurationPropertySources(), getPropertySourcesPlaceholdersResolver(),
-					getConversionService(), getPropertyEditorInitializer(), null,
+			this.binder = new Binder(getConfigurationPropertySources(), // Spring 应用的 PropertySource 属性资源
+					getPropertySourcesPlaceholdersResolver(), // 占位符处理器
+					getConversionService(),  // 类型转换器
+					getPropertyEditorInitializer(), // 属性编辑器
+					null,
 					ConfigurationPropertiesBindConstructorProvider.INSTANCE);
 		}
 		return this.binder;

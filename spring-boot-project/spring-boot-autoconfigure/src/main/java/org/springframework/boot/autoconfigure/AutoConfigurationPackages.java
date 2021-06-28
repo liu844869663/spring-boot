@@ -120,11 +120,13 @@ public abstract class AutoConfigurationPackages {
 
 		@Override
 		public void registerBeanDefinitions(AnnotationMetadata metadata, BeanDefinitionRegistry registry) {
+			// 注册一个 BasePackages 类的 BeanDefinition，角色为内部角色，名称为 `org.springframework.boot.autoconfigure.AutoConfigurationPackages`
 			register(registry, new PackageImport(metadata).getPackageName());
 		}
 
 		@Override
 		public Set<Object> determineImports(AnnotationMetadata metadata) {
+			// 将注解元信息封装成 PackageImport 对象，对注解所在的包名进行封装
 			return Collections.singleton(new PackageImport(metadata));
 		}
 

@@ -47,6 +47,8 @@ import org.springframework.core.annotation.AliasFor;
 public @interface SpringBootConfiguration {
 
 	/**
+	 * 被标记的 Bean 是否进行 CGLIB 提升
+	 *
 	 * Specify whether {@link Bean @Bean} methods should get proxied in order to enforce
 	 * bean lifecycle behavior, e.g. to return shared singleton bean instances even in
 	 * case of direct {@code @Bean} method calls in user code. This feature requires

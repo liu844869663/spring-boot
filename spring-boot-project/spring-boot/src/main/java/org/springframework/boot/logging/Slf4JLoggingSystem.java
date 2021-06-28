@@ -43,6 +43,7 @@ public abstract class Slf4JLoggingSystem extends AbstractLoggingSystem {
 	@Override
 	public void beforeInitialize() {
 		super.beforeInitialize();
+		// <1> 配置 JUL 的桥接处理器，桥接到 slf4j
 		configureJdkLoggingBridgeHandler();
 	}
 
@@ -58,14 +59,18 @@ public abstract class Slf4JLoggingSystem extends AbstractLoggingSystem {
 			LogFile logFile) {
 		Assert.notNull(location, "Location must not be null");
 		if (initializationContext != null) {
+			// 将 Environment 中的日志配置往 System 中配置
 			applySystemProperties(initializationContext.getEnvironment(), logFile);
 		}
 	}
 
 	private void configureJdkLoggingBridgeHandler() {
 		try {
+			// <1> 判断 JUL 是否桥接到 SLF4J 了
 			if (isBridgeJulIntoSlf4j()) {
+				// <2> 移除 JUL 桥接处理器
 				removeJdkLoggingBridgeHandler();
+				// <3> 重新安装 SLF4JBridgeHandler
 				SLF4JBridgeHandler.install();
 			}
 		}
@@ -80,6 +85,7 @@ public abstract class Slf4JLoggingSystem extends AbstractLoggingSystem {
 	 * @since 2.0.4
 	 */
 	protected final boolean isBridgeJulIntoSlf4j() {
+		// 存在 SLF4JBridgeHandler 类，且 JUL 只有 ConsoleHandler 处理器被创建
 		return isBridgeHandlerAvailable() && isJulUsingASingleConsoleHandlerAtMost();
 	}
 
@@ -95,7 +101,9 @@ public abstract class Slf4JLoggingSystem extends AbstractLoggingSystem {
 
 	private void removeJdkLoggingBridgeHandler() {
 		try {
+			// 移除 JUL 的 ConsoleHandler
 			removeDefaultRootHandler();
+			// 卸载 SLF4JBridgeHandler
 			SLF4JBridgeHandler.uninstall();
 		}
 		catch (Throwable ex) {

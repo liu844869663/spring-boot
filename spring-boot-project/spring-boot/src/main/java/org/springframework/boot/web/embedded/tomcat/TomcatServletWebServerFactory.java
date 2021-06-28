@@ -34,6 +34,7 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 import javax.servlet.ServletContainerInitializer;
+import javax.servlet.ServletContext;
 
 import org.apache.catalina.Context;
 import org.apache.catalina.Engine;
@@ -174,22 +175,40 @@ public class TomcatServletWebServerFactory extends AbstractServletWebServerFacto
 	@Override
 	public WebServer getWebServer(ServletContextInitializer... initializers) {
 		if (this.disableMBeanRegistry) {
+			// <1> 禁用 MBean 注册中心
 			Registry.disableRegistry();
 		}
+		// <2> 创建一个 Tomcat 对象 `tomcat`
 		Tomcat tomcat = new Tomcat();
+		// <3> 创建一个临时目录（退出时删除）
 		File baseDir = (this.baseDirectory != null) ? this.baseDirectory : createTempDir("tomcat");
+		// <4> 将这个目录作为 Tomcat 的目录
 		tomcat.setBaseDir(baseDir.getAbsolutePath());
+
+		// <5> 创建一个 NIO 协议的 Connector 连接器对象，并添加到第 `2` 步创建的 `tomcat` 中
 		Connector connector = new Connector(this.protocol);
 		connector.setThrowOnFailure(true);
 		tomcat.getService().addConnector(connector);
+		// <6> 对 Connector 进行配置，设置 `server.port` 端口、编码
+		// `server.tomcat.min-spare-threads` 最小空闲线程和 `server.tomcat.accept-count` 最大线程数
 		customizeConnector(connector);
 		tomcat.setConnector(connector);
+		// <7> 禁止自动部署
 		tomcat.getHost().setAutoDeploy(false);
 		configureEngine(tomcat.getEngine());
+		// <8> 同时支持多个 Connector 连接器（默认没有）
 		for (Connector additionalConnector : this.additionalTomcatConnectors) {
 			tomcat.getService().addConnector(additionalConnector);
 		}
+		// <9> 创建一个 TomcatEmbeddedContext 上下文对象，并进行初始化工作，配置 TomcatStarter 作为启动器
+		// 会将这个上下文对象设置到当前 `tomcat` 中去
 		prepareContext(tomcat.getHost(), initializers);
+		/**
+		 * <10> 创建一个 TomcatWebServer 容器对象，是对 `tomcat` 的封装，用于控制 Tomcat 服务器
+		 * 同时初始化 Tomcat 容器并启动，这里会异步触发了 {@link TomcatStarter#onStartup} 方法
+		 * 也就会调用入参中几个 {@link ServletContextInitializer#onStartup} 方法
+		 * 例如 {@link org.springframework.boot.web.servlet.context.ServletWebServerApplicationContext#selfInitialize}
+		 */
 		return getTomcatWebServer(tomcat);
 	}
 
@@ -202,14 +221,17 @@ public class TomcatServletWebServerFactory extends AbstractServletWebServerFacto
 
 	protected void prepareContext(Host host, ServletContextInitializer[] initializers) {
 		File documentRoot = getValidDocumentRoot();
+		// <1> 创建一个 TomcatEmbeddedContext 上下文对象 `context`
 		TomcatEmbeddedContext context = new TomcatEmbeddedContext();
 		if (documentRoot != null) {
 			context.setResources(new LoaderHidingResourceRoot(context));
 		}
 		context.setName(getContextPath());
 		context.setDisplayName(getDisplayName());
+		// <2> 设置 `context-path`
 		context.setPath(getContextPath());
 		File docBase = (documentRoot != null) ? documentRoot : createTempDir("tomcat-docbase");
+		// <3> 设置 Tomcat 根目录
 		context.setDocBase(docBase.getAbsolutePath());
 		context.addLifecycleListener(new FixContextListener());
 		context.setParentClassLoader((this.resourceLoader != null) ? this.resourceLoader.getClassLoader()
@@ -228,6 +250,7 @@ public class TomcatServletWebServerFactory extends AbstractServletWebServerFacto
 		loader.setDelegate(true);
 		context.setLoader(loader);
 		if (isRegisterDefaultServlet()) {
+			// <4> 注册默认的 Servlet 为 `org.apache.catalina.servlets.DefaultServlet`
 			addDefaultServlet(context);
 		}
 		if (shouldRegisterJspServlet()) {
@@ -236,7 +259,9 @@ public class TomcatServletWebServerFactory extends AbstractServletWebServerFacto
 		}
 		context.addLifecycleListener(new StaticResourceConfigurer(context));
 		ServletContextInitializer[] initializersToUse = mergeInitializers(initializers);
+		// <5> 将这个 `context` 上下文对象添加到 `tomcat` 中去
 		host.addChild(context);
+		// <6> 对 TomcatEmbeddedContext 进行配置，例如配置 TomcatStarter 启动器，它是对 ServletContext 上下文对象的初始器 `initializersToUse` 的封装
 		configureContext(context, initializersToUse);
 		postProcessContext(context);
 	}
@@ -301,6 +326,7 @@ public class TomcatServletWebServerFactory extends AbstractServletWebServerFacto
 
 	// Needs to be protected so it can be used by subclasses
 	protected void customizeConnector(Connector connector) {
+		// 获取端口（也就是 `server.port`），并设置
 		int port = Math.max(getPort(), 0);
 		connector.setPort(port);
 		if (StringUtils.hasText(this.getServerHeader())) {
@@ -310,6 +336,7 @@ public class TomcatServletWebServerFactory extends AbstractServletWebServerFacto
 			customizeProtocol((AbstractProtocol<?>) connector.getProtocolHandler());
 		}
 		invokeProtocolHandlerCustomizers(connector.getProtocolHandler());
+		// 设置编码
 		if (getUriEncoding() != null) {
 			connector.setURIEncoding(getUriEncoding().name());
 		}
@@ -321,6 +348,8 @@ public class TomcatServletWebServerFactory extends AbstractServletWebServerFacto
 		TomcatConnectorCustomizer compression = new CompressionConnectorCustomizer(getCompression());
 		compression.customize(connector);
 		for (TomcatConnectorCustomizer customizer : this.tomcatConnectorCustomizers) {
+			// 借助 TomcatWebServerFactoryCustomizer 对 Connector 进行配置
+			// 例如设置 `server.tomcat.min-spare-threads` 最小空闲线程和 `server.tomcat.accept-count` 最大线程数
 			customizer.customize(connector);
 		}
 	}
@@ -350,6 +379,8 @@ public class TomcatServletWebServerFactory extends AbstractServletWebServerFacto
 	 * @param initializers initializers to apply
 	 */
 	protected void configureContext(Context context, ServletContextInitializer[] initializers) {
+		// <1> 创建一个 TomcatStarter 启动器，此时把 ServletContextInitializer 数组传入进去了
+		// 并设置到 TomcatEmbeddedContext 上下文中
 		TomcatStarter starter = new TomcatStarter(initializers);
 		if (context instanceof TomcatEmbeddedContext) {
 			TomcatEmbeddedContext embeddedContext = (TomcatEmbeddedContext) context;
@@ -363,6 +394,7 @@ public class TomcatServletWebServerFactory extends AbstractServletWebServerFacto
 		for (Valve valve : this.contextValves) {
 			context.getPipeline().addValve(valve);
 		}
+		// <2> 设置错误页面
 		for (ErrorPage errorPage : getErrorPages()) {
 			org.apache.tomcat.util.descriptor.web.ErrorPage tomcatErrorPage = new org.apache.tomcat.util.descriptor.web.ErrorPage();
 			tomcatErrorPage.setLocation(errorPage.getPath());
@@ -373,8 +405,10 @@ public class TomcatServletWebServerFactory extends AbstractServletWebServerFacto
 		for (MimeMappings.Mapping mapping : getMimeMappings()) {
 			context.addMimeMapping(mapping.getExtension(), mapping.getMimeType());
 		}
+		// <3> 配置 TomcatEmbeddedContext 上下文的 Session 会话，例如超时会话时间
 		configureSession(context);
 		new DisableReferenceClearingContextCustomizer().customize(context);
+		// <4> 对 TomcatEmbeddedContext 上下文进行自定义处理，例如添加 WsContextListener 监听器
 		for (TomcatContextCustomizer customizer : this.tomcatContextCustomizers) {
 			customizer.customize(context);
 		}
@@ -437,6 +471,10 @@ public class TomcatServletWebServerFactory extends AbstractServletWebServerFacto
 	 * @return a new {@link TomcatWebServer} instance
 	 */
 	protected TomcatWebServer getTomcatWebServer(Tomcat tomcat) {
+		/**
+		 * 创建一个 TomcatWebServer 容器对象
+		 * 同时初始化 Tomcat 容器并启动，这里会异步触发了 {@link TomcatStarter#onStartup} 方法
+		 */
 		return new TomcatWebServer(tomcat, getPort() >= 0);
 	}
 
