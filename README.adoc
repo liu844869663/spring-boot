@@ -10,7 +10,7 @@
 
 - **《精尽 Spring Boot 源码分析 - Jar 包的启动实现》**
 
-- **《精尽 Spring Boot 源码分析- SpringApplication 启动类的启动过程》**
+- **《精尽 Spring Boot 源码分析 - SpringApplication 启动类的启动过程》**
 
 - **《精尽 Spring Boot 源码分析 - 内嵌 Tomcat 容器的实现》**
 
