@@ -4,24 +4,22 @@
 
 该工程已经对 Spring Boot 的各个模块功能进行了比较详细的源码注释与分析，对应的源码分析文章可查看我的博客园 https://www.cnblogs.com/lifullmoon[月圆吖]
 
-持续更新中~
+- https://www.cnblogs.com/lifullmoon/p/14948700.html[**《精尽 Spring Boot 源码分析 - 序言》**]（调试环境的搭建、项目结构的简述）
 
-- **《精尽 Spring Boot 源码分析 - 序言》**
+- https://www.cnblogs.com/lifullmoon/p/14953064.html[**《精尽 Spring Boot 源码分析 - Jar 包的启动实现》**]
 
-- **《精尽 Spring Boot 源码分析 - Jar 包的启动实现》**
+- https://www.cnblogs.com/lifullmoon/p/14957434.html[**《精尽 Spring Boot 源码分析 - SpringApplication 启动类的启动过程》**]
 
-- **《精尽 Spring Boot 源码分析 - SpringApplication 启动类的启动过程》**
+- https://www.cnblogs.com/lifullmoon/p/14957595.html[**《精尽 Spring Boot 源码分析 - 内嵌 Tomcat 容器的实现》**]
 
-- **《精尽 Spring Boot 源码分析 - 内嵌 Tomcat 容器的实现》**
+- https://www.cnblogs.com/lifullmoon/p/14957634.html[**《精尽 Spring Boot 源码分析 - 支持外部 Tomcat 容器的实现》**]
 
-- **《精尽 Spring Boot 源码分析 - 支持外部 Tomcat 容器的实现》**
+- https://www.cnblogs.com/lifullmoon/p/14957751.html[**《精尽 Spring Boot 源码分析 - 剖析 @SpringBootApplication 注解》**]
 
-- **《精尽 Spring Boot 源码分析 - 剖析 @SpringBootApplication 注解》**
+- https://www.cnblogs.com/lifullmoon/p/14957771.html[**《精尽 Spring Boot 源码分析 - Condition 接口的扩展》**]
 
-- **《精尽 Spring Boot 源码分析 - Condition 接口的扩展》**
+- https://www.cnblogs.com/lifullmoon/p/14957791.html[**《精尽 Spring Boot 源码分析 - 配置加载》**]
 
-- **《精尽 Spring Boot 源码分析 - 配置加载》**
+- https://www.cnblogs.com/lifullmoon/p/14957824.html[**《精尽 Spring Boot 源码分析 - 日志系统》**]
 
-- **《精尽 Spring Boot 源码分析 - 日志系统》**
-
-- **《精尽 Spring Boot 源码分析 - @ConfigurationProperties 注解的实现》**
+- https://www.cnblogs.com/lifullmoon/p/14957836.html[**《精尽 Spring Boot 源码分析 - @ConfigurationProperties 注解的实现》**]
